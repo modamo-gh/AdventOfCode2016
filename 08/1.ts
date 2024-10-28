@@ -11,7 +11,27 @@ const createRect = (width: number, length: number) => {
 	}
 };
 
-const rotateRow = (column: number, rotationAmount: number) => {};
+const rotateRow = (row: number, rotationAmount: number) => {
+	const rowClone = [...screen[row]];
+    const rowLength = screen[row].length;
+
+	for (let i = 0; i < rowLength; i++) {
+		screen[row][i] = rowClone[(i + rotationAmount) % rowLength];
+	}
+};
+
+const rotateColumn = (column: number, rotationAmount: number) => {
+	const columnClone = [];
+	const rowLength = screen[0].length;
+
+	for (let i = 0; i < rowLength; i++) {
+		columnClone.push(screen[i][column]);
+	}
+
+	for (let i = 0; i < rowLength; i++) {
+		screen[i][column] = columnClone[(i + rotationAmount) % rowLength];
+	}
+};
 
 for (const instruction of instructions) {
 	const tokens = instruction.split(" ");
@@ -24,11 +44,14 @@ for (const instruction of instructions) {
 
 		createRect(width, length);
 	} else if (action === "rotate" && tokens[1] === "row") {
+		const row = parseInt(tokens[2].split("x")[1]);
+		const rotationAmount = parseInt(tokens[4]);
+
+		rotateRow(row, rotationAmount);
+	} else if (action === "rotate" && tokens[1] === "column") {
 		const column = parseInt(tokens[2].split("x")[1]);
 		const rotationAmount = parseInt(tokens[4]);
 
-		rotateRow(column, rotationAmount);
-	} else if (action === "rotate" && tokens[1] === "column") {
-		// rotateColumn(screen);
+		rotateColumn(column, rotationAmount);
 	}
 }
