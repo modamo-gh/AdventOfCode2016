@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "@types/node": "^16.18.116",
+    "typescript": "^5.6.3"
+  }
+}

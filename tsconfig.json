@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es2015",                // or later
+    "module": "commonjs",
+    "lib": ["es2015", "dom"],
+    "types": ["node"],                 // Include Node types here
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true               // Optional: Skips type checking in .d.ts files, reduces errors
+  },
+  "include": ["**/*.ts"],          // Adjust to your source folder
+  "exclude": ["node_modules"]          // Exclude node_modules for a clean scope
+}
