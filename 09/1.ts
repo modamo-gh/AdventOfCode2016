@@ -1,16 +1,26 @@
 import { readFileSync } from "fs";
 
-const files = readFileSync("input.txt", "utf8").trim().split("\n");
+const strings = readFileSync("input.txt", "utf8").trim().split("\n");
 
-for(const file of files){
-    let decompressedString = "";
+const getDecompressedStringLength = (string: string): number => {
+  const matches = [...string.matchAll(/\((\d+)x(\d+)\)/g)];
 
-    const matches = file.matchAll(/((\d)x(\d))/g);
+  if (!matches.length) {
+    return string.length;
+  }
 
-    for(const match of matches){
-        const sequenceLength = parseInt(match[2]);
-        const numberOfRepetitions = parseInt(match[3]);
+  const match = matches[0];
+  const subsequenceLength = match[1];
 
-        console.log(sequenceLength, numberOfRepetitions)
-    }
+  return (
+    match.index +
+    parseInt(subsequenceLength) * parseInt(match[2]) +
+    getDecompressedStringLength(
+      string.slice(match.index + match[0].length + parseInt(subsequenceLength))
+    )
+  );
+};
+
+for (const string of strings) {
+  console.log(getDecompressedStringLength(string));
 }
