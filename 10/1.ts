@@ -1,104 +1,128 @@
 import { readFileSync } from "fs";
 
-const instructions = readFileSync("input.txt", "utf8").trim().split("\n");
+const instructions = readFileSync("input.txt", "utf8").trim().split(/\n/g);
+const botsToMicrochips = new Map<number, number[]>();
+const outputToMicrochips = new Map<number, number>();
+
+for (const instruction of instructions) {
+	const botMatches = [...instruction.matchAll(/bot (\d+)/g)];
+	const outputMatches = [...instruction.matchAll(/output (\d+)/g)];
+
+	for (const match of botMatches) {
+		const botNumber = parseInt(match[1]);
+
+		if (!botsToMicrochips.has(botNumber)) {
+			botsToMicrochips.set(botNumber, []);
+		}
+	}
+
+	for (const match of outputMatches) {
+		const outputNumber = parseInt(match[1]);
+
+		if (!outputToMicrochips.has(outputNumber)) {
+			outputToMicrochips.set(outputNumber, -1);
+		}
+	}
+}
+
 const microchipInstructions = instructions.filter((instruction) =>
 	instruction.startsWith("value")
 );
-const botInstructions = instructions.filter((instruction) =>
-	instruction.startsWith("bot")
+
+for (const instruction of microchipInstructions) {
+	const matches = [...instruction.matchAll(/value (\d+) goes to bot (\d+)/g)];
+
+	for (const match of matches) {
+		const botNumber = parseInt(match[2]);
+		const microchipValue = parseInt(match[1]);
+		const microchips = botsToMicrochips.get(botNumber)!;
+
+		microchips?.push(microchipValue);
+		microchips?.sort((a, b) => a - b);
+		botsToMicrochips.set(botNumber, microchips);
+	}
+}
+
+const botInstructions = new Set<string>(
+	instructions.filter((instruction) => instruction.startsWith("bot"))
 );
-const botsToMicrochips = new Map<number, { low: number; high: number }>();
+
 const TARGET_LOW = 17;
 const TARGET_HIGH = 61;
 
-const getBot = () => {
-	for (const [bot, microchip] of botsToMicrochips) {
-		if (microchip.low === TARGET_LOW && microchip.high === TARGET_HIGH) {
-			return bot;
-		}
-	}
-};
-
-for (const instruction of microchipInstructions) {
-	const matches = [...instruction.matchAll(/(\d+)/g)];
-	const microchipValue = parseInt(matches[0][0]);
-	const botNumber = parseInt(matches[1][0]);
-	const microchips = botsToMicrochips.get(botNumber) || {
-		low: Infinity,
-		high: -Infinity
-	};
-
-	if (!Number.isFinite(microchips.low) && !Number.isFinite(microchips.high)) {
-		microchips.low = microchipValue;
-		microchips.high = microchipValue;
-	} else if (microchipValue < microchips.low) {
-		microchips.low = microchipValue;
-	} else if (microchipValue > microchips.high) {
-		microchips.high = microchipValue;
-	}
-
-	botsToMicrochips.set(botNumber, microchips);
-
-	console.log(getBot());
-}
-
-const outputToMicrochips = new Map<number, number>();
-
 for (const instruction of botInstructions) {
-	const tokens = instruction.split(/\s+/);
-	const givingBotNumber = parseInt(tokens[1]);
-	const givingBotMicrochips = botsToMicrochips.get(givingBotNumber) || {
-		low: Infinity,
-		high: -Infinity
-	};
+	const matches = [
+		...instruction.matchAll(
+			/bot (\d+) gives low to (\w+) (\d+) and high to (\w+) (\d+)/g
+		),
+	];
 
-	if (tokens[5] === "bot") {
-		const receivingBotNumber = parseInt(tokens[6]);
-		const receivingBotMicrochips = botsToMicrochips.get(
-			receivingBotNumber
-		) || {
-			low: Infinity,
-			high: -Infinity
-		};
+	for (const match of matches) {
+		const givingBotNumber = parseInt(match[1]);
+		const lowDestinationType = match[2];
+		const lowDestinationNumber = parseInt(match[3]);
+		const highDestinationType = match[4];
+		const highDestinationNumber = parseInt(match[5]);
 
-		if (givingBotMicrochips.low < receivingBotMicrochips.low) {
-			receivingBotMicrochips.low = givingBotMicrochips.low;
-		} else if (givingBotMicrochips.low > receivingBotMicrochips.high) {
-			receivingBotMicrochips.high = givingBotMicrochips.low;
+		const givingBotMicrochips = botsToMicrochips.get(givingBotNumber)!;
+		const [givingBotLow, givingBotHigh] = givingBotMicrochips;
+
+		if (givingBotMicrochips.length === 2) {
+			if (givingBotLow === TARGET_LOW && givingBotHigh === TARGET_HIGH) {
+				console.log(givingBotNumber);
+			}
+
+			const transferMicrochip = (takingBotNumber: number, value: string) => {
+				const givingBotValue = value === "low" ? givingBotLow : givingBotHigh;
+				const takingBotMicrochips = botsToMicrochips.get(takingBotNumber)!;
+
+				if (takingBotMicrochips.length < 2) {
+					takingBotMicrochips.push(givingBotValue);
+					takingBotMicrochips.sort((a, b) => a - b);
+				} else if (takingBotMicrochips.length === 2) {
+					takingBotMicrochips[0] = Math.min(
+						takingBotMicrochips[0],
+						givingBotValue
+					);
+					takingBotMicrochips[1] = Math.max(
+						takingBotMicrochips[1],
+						givingBotValue
+					);
+				}
+
+				if (
+					takingBotMicrochips.length === 2 &&
+					takingBotMicrochips[0] === TARGET_LOW &&
+					takingBotMicrochips[1] === TARGET_HIGH
+				) {
+					console.log(takingBotNumber);
+				}
+
+				botsToMicrochips.set(takingBotNumber, takingBotMicrochips);
+			};
+
+			if (lowDestinationType === "output") {
+				outputToMicrochips.set(lowDestinationNumber, givingBotLow);
+			} else if (lowDestinationType === "bot") {
+				transferMicrochip(lowDestinationNumber, "low");
+			}
+
+			givingBotMicrochips[0] = Infinity;
+
+			if (highDestinationType === "output") {
+				outputToMicrochips.set(highDestinationNumber, givingBotHigh);
+			} else if (highDestinationType === "bot") {
+				transferMicrochip(highDestinationNumber, "high");
+			}
+
+			givingBotMicrochips[1] = -Infinity;
+			botsToMicrochips.set(givingBotNumber, givingBotMicrochips);
+
+			botInstructions.delete(instruction)
 		}
-
-		botsToMicrochips.set(receivingBotNumber, receivingBotMicrochips);
-	} else if (tokens[5] === "output") {
-		const outputNumber = parseInt(tokens[6]);
-
-		outputToMicrochips.set(outputNumber, givingBotMicrochips.low);
-	}
-
-	givingBotMicrochips.low = Infinity;
-
-	if (tokens[10] === "bot") {
-		const receivingBotNumber = parseInt(tokens[11]);
-		const receivingBotMicrochips = botsToMicrochips.get(
-			receivingBotNumber
-		) || {
-			low: Infinity,
-			high: -Infinity
-		};
-
-		if (givingBotMicrochips.high > receivingBotMicrochips.high) {
-			receivingBotMicrochips.high = givingBotMicrochips.high;
-		} else if (givingBotMicrochips.high < receivingBotMicrochips.low) {
-			receivingBotMicrochips.low = givingBotMicrochips.high;
+		else{
+			botInstructions.delete(instruction);
+			botInstructions.add(instruction)
 		}
-
-		botsToMicrochips.set(receivingBotNumber, receivingBotMicrochips);
-	} else if (tokens[10] === "output") {
-		const outputNumber = parseInt(tokens[11]);
-
-		outputToMicrochips.set(outputNumber, givingBotMicrochips.high);
 	}
-
-	givingBotMicrochips.high = -Infinity;
-
-	console.log(getBot());
 }
