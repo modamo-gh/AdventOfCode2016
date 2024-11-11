@@ -24,71 +24,98 @@ const root = new TreeNode(state);
 
 console.log(root);
 
-// const isValidState = (node: TreeNode) => {
-// 	if (
-// 		(node.state.corn_onRight === node.state.chicken_onRight &&
-// 			node.state.corn_onRight !== node.state.you_onRight) ||
-// 		(node.state.chicken_onRight === node.state.fox_onRight &&
-// 			node.state.chicken_onRight !== node.state.you_onRight)
-// 	) {
-// 		return false;
-// 	}
+const isValidState = (node: TreeNode) => {
+	if (
+		(node.state.corn_onRight === node.state.chicken_onRight &&
+			node.state.corn_onRight !== node.state.you_onRight) ||
+		(node.state.chicken_onRight === node.state.fox_onRight &&
+			node.state.chicken_onRight !== node.state.you_onRight)
+	) {
+		return false;
+	}
 
-// 	return true;
-// };
+	return true;
+};
 
-// const uniqueStates = new Set<string>([JSON.stringify(root.state)]);
+const uniqueStates = new Set<string>([JSON.stringify(root.state)]);
 
-// const expandStateTree = (node: TreeNode) => {
-// 	if (
-// 		node.state.you_onRight &&
-// 		node.state.corn_onRight &&
-// 		node.state.chicken_onRight &&
-// 		node.state.fox_onRight
-// 	) {
-// 		return;
-// 	}
+const areAllElementsOnFourthFloor = (state: State) => {
+	for (const element in state) {
+		if (state[element] !== 4) {
+			return false;
+		}
+	}
 
-// 	for (const x in node.state) {
-// 		if (
-// 			x !== "you_onRight" &&
-// 			node.state[x] === node.state["you_onRight"]
-// 		) {
-// 			const stateClone: State = { ...node.state };
+	return true;
+};
 
-// 			stateClone[x] = !stateClone[x];
-// 			stateClone["you_onRight"] = !stateClone["you_onRight"];
+const expandStateTree = (node: TreeNode) => {
+	if(areAllElementsOnFourthFloor(node.state)){
+        return;
+    }
 
-// 			const childNode = new TreeNode(stateClone);
+	for (const element in node.state) {
+        if(element !== "E" && node.state[element] === node.state["E"]){
+            const elevatorMovement = [-1, 1];
 
-// 			if (
-// 				isValidState(childNode) &&
-// 				!uniqueStates.has(JSON.stringify(childNode.state))
-// 			) {
-// 				node.children.push(childNode);
-// 				uniqueStates.add(JSON.stringify(childNode.state));
-// 				expandStateTree(childNode);
-// 			}
-// 		} else if (x === "you_onRight") {
-// 			const stateClone: State = { ...node.state };
+            for(const direction in elevatorMovement){
+                const stateClone: State = { ...node.state };
 
-// 			stateClone["you_onRight"] = !stateClone["you_onRight"];
+                stateClone[element] += direction;
+                stateClone["E"] += direction;
 
-// 			const childNode = new TreeNode(stateClone);
+                const childNode = new TreeNode(stateClone);
+            
+            
+            	if (
+				isValidState(childNode) &&
+				!uniqueStates.has(JSON.stringify(childNode.state))
+			) {
+				node.children.push(childNode);
+				uniqueStates.add(JSON.stringify(childNode.state));
+				expandStateTree(childNode);
+			}
+        }
+        }
+	// 	if (
+	// 		x !== "you_onRight" &&
+	// 		node.state[x] === node.state["you_onRight"]
+	// 	) {
+	// 		const stateClone: State = { ...node.state };
 
-// 			if (
-// 				isValidState(childNode) &&
-// 				!uniqueStates.has(JSON.stringify(childNode.state))
-// 			) {
-// 				node.children.push(childNode);
-// 				uniqueStates.add(JSON.stringify(childNode.state));
-// 				expandStateTree(childNode);
-// 			}
-// 		}
-// 	}
-// };
+	// 		stateClone[x] = !stateClone[x];
+	// 		stateClone["you_onRight"] = !stateClone["you_onRight"];
 
-// expandStateTree(root);
+	// 		const childNode = new TreeNode(stateClone);
+
+	// 		if (
+	// 			isValidState(childNode) &&
+	// 			!uniqueStates.has(JSON.stringify(childNode.state))
+	// 		) {
+	// 			node.children.push(childNode);
+	// 			uniqueStates.add(JSON.stringify(childNode.state));
+	// 			expandStateTree(childNode);
+	// 		}
+	// 	} else if (x === "you_onRight") {
+	// 		const stateClone: State = { ...node.state };
+
+	// 		stateClone["you_onRight"] = !stateClone["you_onRight"];
+
+	// 		const childNode = new TreeNode(stateClone);
+
+	// 		if (
+	// 			isValidState(childNode) &&
+	// 			!uniqueStates.has(JSON.stringify(childNode.state))
+	// 		) {
+	// 			node.children.push(childNode);
+	// 			uniqueStates.add(JSON.stringify(childNode.state));
+	// 			expandStateTree(childNode);
+	// 		}
+	// 	}
+	// }
+};
+
+expandStateTree(root);
 
 // let minSteps = Infinity;
 
