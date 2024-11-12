@@ -7,7 +7,7 @@ const arrangement = readFileSync("input.txt", "utf8").trim().split("\n");
 
 for (let floor = 0; floor < arrangement.length; floor++) {
 	const matches = [
-		...arrangement[floor].matchAll(/((\w+-?\w*) (microchip|generator))/g),
+		...arrangement[floor].matchAll(/((\w+-?\w*) (microchip|generator))/g)
 	];
 
 	matches.forEach(
@@ -22,16 +22,18 @@ for (let floor = 0; floor < arrangement.length; floor++) {
 
 const root = new TreeNode(state);
 
-console.log(root);
-
 const isValidState = (node: TreeNode) => {
-	if (
-		(node.state.corn_onRight === node.state.chicken_onRight &&
-			node.state.corn_onRight !== node.state.you_onRight) ||
-		(node.state.chicken_onRight === node.state.fox_onRight &&
-			node.state.chicken_onRight !== node.state.you_onRight)
-	) {
-		return false;
+	// If item is microchip (ends in M)
+	// If that floor has an item that ends in G
+	// If that item shares the same element as the microchip, true
+	// Else false
+	for (const item in node.state) {
+		if (
+			item.endsWith("M") &&
+			node.state[item.slice(0, 2) + "G"] !== node.state[item]
+		) {
+			return false;
+		}
 	}
 
 	return true;
@@ -50,72 +52,41 @@ const areAllElementsOnFourthFloor = (state: State) => {
 };
 
 const expandStateTree = (node: TreeNode) => {
-	if(areAllElementsOnFourthFloor(node.state)){
-        return;
-    }
+	if (areAllElementsOnFourthFloor(node.state)) {
+		return;
+	}
 
-	for (const element in node.state) {
-        if(element !== "E" && node.state[element] === node.state["E"]){
-            const elevatorMovement = [-1, 1];
+	for (const item in node.state) {
+		if (item !== "E" && node.state[item] === node.state["E"]) {
+			const elevatorMovement = [-1, 1];
 
-            for(const direction in elevatorMovement){
-                const stateClone: State = { ...node.state };
+			for (const direction of elevatorMovement) {
+				const stateClone: State = { ...node.state };
+				const newElevatorFloor = stateClone["E"] + direction;
 
-                stateClone[element] += direction;
-                stateClone["E"] += direction;
+				if (newElevatorFloor >= 0 && newElevatorFloor <= 4) {
+					stateClone[item] += direction;
+					stateClone["E"] += direction;
+				}
 
-                const childNode = new TreeNode(stateClone);
-            
-            
-            	if (
-				isValidState(childNode) &&
-				!uniqueStates.has(JSON.stringify(childNode.state))
-			) {
-				node.children.push(childNode);
-				uniqueStates.add(JSON.stringify(childNode.state));
-				expandStateTree(childNode);
+				const childNode = new TreeNode(stateClone);
+
+				if (
+					isValidState(childNode) &&
+					!uniqueStates.has(JSON.stringify(childNode.state))
+				) {
+					node.children.push(childNode);
+					uniqueStates.add(JSON.stringify(childNode.state));
+					expandStateTree(childNode);
+				}
 			}
-        }
-        }
-	// 	if (
-	// 		x !== "you_onRight" &&
-	// 		node.state[x] === node.state["you_onRight"]
-	// 	) {
-	// 		const stateClone: State = { ...node.state };
-
-	// 		stateClone[x] = !stateClone[x];
-	// 		stateClone["you_onRight"] = !stateClone["you_onRight"];
-
-	// 		const childNode = new TreeNode(stateClone);
-
-	// 		if (
-	// 			isValidState(childNode) &&
-	// 			!uniqueStates.has(JSON.stringify(childNode.state))
-	// 		) {
-	// 			node.children.push(childNode);
-	// 			uniqueStates.add(JSON.stringify(childNode.state));
-	// 			expandStateTree(childNode);
-	// 		}
-	// 	} else if (x === "you_onRight") {
-	// 		const stateClone: State = { ...node.state };
-
-	// 		stateClone["you_onRight"] = !stateClone["you_onRight"];
-
-	// 		const childNode = new TreeNode(stateClone);
-
-	// 		if (
-	// 			isValidState(childNode) &&
-	// 			!uniqueStates.has(JSON.stringify(childNode.state))
-	// 		) {
-	// 			node.children.push(childNode);
-	// 			uniqueStates.add(JSON.stringify(childNode.state));
-	// 			expandStateTree(childNode);
-	// 		}
-	// 	}
-	// }
+		}
+	}
 };
 
 expandStateTree(root);
+
+console.log(root);
 
 // let minSteps = Infinity;
 
